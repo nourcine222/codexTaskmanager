@@ -27,6 +27,10 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    isBlocked: {
+        type: Boolean,
+        default: false, // L'utilisateur n'est pas bloqué par défaut
+    },
     isOnline: {
       type: Boolean,
       default: false,

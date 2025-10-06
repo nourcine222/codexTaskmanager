@@ -1,7 +1,7 @@
 import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import { AuthContext } from "../components/AuthContext"; // Adjust import path as needed
+import { AuthContext } from "../components/AuthContext"; // Ensure this path is correct
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -10,7 +10,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext); // Use the login function from context
+  const { login } = useContext(AuthContext); 
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -32,16 +32,40 @@ export default function Login() {
       setLoading(false);
       return;
     }
-console.log({password, email})
+
     try {
       const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/login`, {
         email,
         password,
       }, { headers: { "Content-Type": "application/json" } });
       
-      // Store token and update auth state
-      localStorage.setItem("token", res.data.token);
-      login(); // Update context state
+      // DESTRUCTURE & ALIAS: The backend sends properties like _id, name, email, role, and token directly.
+      // We must construct the 'user' object expected by other frontend components.
+      const { token, _id, name, phone, role, isOnline } = res.data;
+
+      // 1. Validate the minimum required data is present
+      if (!token || !res.data._id) {
+         // This should only happen if the backend response structure changes unexpectedly
+         throw new Error("Invalid response from server: Missing token or user ID.");
+      }
+      
+      // 2. CONSTRUCT the user object for localStorage, removing the sensitive token
+      const userToStore = { 
+        _id, 
+        name, 
+        email: res.data.email, // Use response email, which is known to be correct
+        phone,
+        role,
+        isOnline,
+        // The password field is automatically excluded because the backend logic doesn't select it
+      };
+      
+      // 3. Store token AND the user object (stringified)
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(userToStore)); 
+      
+      // 4. Update context state
+      login(); // This should trigger a global re-render, likely setting isAuthenticated to true
       
       setSuccess("Connexion réussie! Redirection...");
       
@@ -51,8 +75,15 @@ console.log({password, email})
       }, 1500);
       
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Échec de la connexion";
-      setError(errorMessage);
+      // Improved error message extraction
+      const errorMessage = err.response?.data?.message || err.message || "Échec de la connexion. Vérifiez vos identifiants.";
+      
+      // Specific check for 401 (Unauthorized)
+      if (err.response && err.response.status === 401) {
+          setError("Échec de l'authentification. Email ou mot de passe incorrect.");
+      } else {
+          setError(errorMessage);
+      }
       
       // Clear error after 5 seconds
       setTimeout(() => {
@@ -61,12 +92,6 @@ console.log({password, email})
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDemoLogin = () => {
-    setEmail("demo@example.com");
-    setPassword("demo123");
-    setSuccess("Compte démo pré-rempli. Cliquez sur Se connecter.");
   };
 
   return (
@@ -108,7 +133,7 @@ console.log({password, email})
               </label>
               <input
                 type="email"
-                className={`form-control ${error && !email.includes('@') ? 'is-invalid' : ''}`}
+                className={`form-control ${error && email && !email.includes('@') ? 'is-invalid' : ''}`}
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -169,8 +194,6 @@ console.log({password, email})
                 </>
               )}
             </button>
-
-
           </form>
 
           {/* Divider */}

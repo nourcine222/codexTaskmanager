@@ -57,10 +57,13 @@ export default function Sidebar({ visible, setVisible, theme }) {
         
         <nav>
           {[
+            // Existing link
             { to: "/", label: "🏠 Accueil" },
+            // New Dashboard link added here
+            { to: "/dashboard", label: "📊 Dashboard" },
+            // Existing links
             { to: "/projects", label: "📁 Projets" },
             { to: "/tasks", label: "✅ Tâches" }
-            // Admin button removed
           ].map((item, index) => (
             <Link
               key={index}
