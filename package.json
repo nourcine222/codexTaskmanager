@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@coreui/chartjs": "^4.0.0",
+    "@coreui/coreui": "^5.4.3",
+    "@coreui/icons-react": "^2.3.0",
+    "@coreui/react": "^5.9.0",
+    "axios": "^1.12.2",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.9.3"
+  }
+}
